@@ -7,8 +7,6 @@ metadata:
     app.kubernetes.io/name: payment-config
 
 data:
-  # Shared secret – replace in production with a Secret
-  SERVICE_TOKEN: dev-shared-secret-change-me
   LOG_LEVEL: INFO
   # Gateway specific defaults (can be overridden per container)
   REQUEST_TIMEOUT_S: "3.0"

@@ -26,8 +26,8 @@ spec:
           env:
             - name: SERVICE_TOKEN
               valueFrom:
-                configMapKeyRef:
-                  name: payment-config
+                secretKeyRef:
+                  name: payment-secret
                   key: SERVICE_TOKEN
           readinessProbe:
             httpGet:
