@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: payment-config
+  namespace: payment-system
+  labels:
+    app.kubernetes.io/name: payment-config
+
+data:
+  # Shared secret – replace in production with a Secret
+  SERVICE_TOKEN: dev-shared-secret-change-me
+  LOG_LEVEL: INFO
+  # Gateway specific defaults (can be overridden per container)
+  REQUEST_TIMEOUT_S: "3.0"
+  CONNECT_TIMEOUT_S: "1.0"
+  MAX_RETRIES: "2"
+  BACKOFF_BASE_S: "0.1"
+  # Processor specific defaults
+  DECLINE_OVER: "1000000"
+  FAILURE_RATE: "0"
+  LATENCY_MS: "0"
