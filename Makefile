@@ -30,6 +30,7 @@ KUBECONFIG ?= $(HOME)/.kube/config
 k8s-apply:
 	@echo "Applying Kubernetes manifests..."
 	@kubectl apply -f k8s/namespace.yaml
+	@kubectl apply -f k8s/secret.yaml
 	@kubectl apply -f k8s/configmap.yaml
 	@kubectl apply -f k8s/deployment-processor.yaml
 	@kubectl apply -f k8s/service-processor.yaml
