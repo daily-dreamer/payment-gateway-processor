@@ -82,46 +82,48 @@ k8s-wait:
 # Gateway /healthz → 200
 check-health:
 	@echo "Checking gateway /healthz..."
-	@curl -s -o /dev/null -w "%{http_code}\n" http://localhost:$(PAYMENT_PORT)/healthz \
-	  | grep -q '^200$$' && echo "OK" || (echo "Gateway health check FAILED" && exit 1)
+	@curl -i -s http://localhost:$(PAYMENT_PORT)/healthz | tee response_healthz.txt
+	@grep -q "200 OK" response_healthz.txt && echo "\n--> Status: 200 OK" || (echo "\n--> Gateway health check FAILED" && exit 1)
 
 # Gateway /readyz → 200 (processor reachable)
 check-ready:
 	@echo "Checking gateway /readyz..."
-	@curl -s -o /dev/null -w "%{http_code}\n" http://localhost:$(PAYMENT_PORT)/readyz \
-	  | grep -q '^200$$' && echo "OK" || (echo "Gateway readiness FAILED" && exit 1)
+	@curl -i -s http://localhost:$(PAYMENT_PORT)/readyz | tee response_readyz.txt
+	@grep -q "200 OK" response_readyz.txt && echo "\n--> Status: 200 OK" || (echo "\n--> Gateway readiness FAILED" && exit 1)
 
 # Processor /healthz → 200
 check-processor-health:
 	@echo "Checking processor /healthz on port $(PROCESSOR_PORT)..."
-	@curl -s -o /dev/null -w "%{http_code}\n" http://localhost:$(PROCESSOR_PORT)/healthz \
-	  | grep -q '^200$$' && echo "OK" || (echo "Processor health check FAILED" && exit 1)
+	@curl -i -s http://localhost:$(PROCESSOR_PORT)/healthz | tee response_proc_healthz.txt
+	@grep -q "200 OK" response_proc_healthz.txt && echo "\n--> Status: 200 OK" || (echo "\n--> Processor health check FAILED" && exit 1)
 
 # Happy‑path payment (expects approved status)
 check-payment-success:
 	@echo "Running happy‑path payment request..."
-	@curl -s -X POST http://localhost:$(PAYMENT_PORT)/pay \
+	@curl -i -s -X POST http://localhost:$(PAYMENT_PORT)/pay \
 	  -H "Content-Type: application/json" \
 	  -H "X-Service-Token: dev-shared-secret-change-me" \
 	  -d '{"amount":12345,"currency":"USD","payer":"acc-1","payee":"acc-2","cardNumber":"4111111111111111","expiry":"12/25","cvv":"123","reference":"test-01"}' \
-	  -o response.json
-	@cat response.json | grep -q '"status":"approved"' && echo "Payment succeeded" \
-	  || (echo "Payment FAILED" && cat response.json && exit 1)
+	  | tee response.json
+	@grep -q '"status":"approved"' response.json && echo "\n--> Payment succeeded (approved)" \
+	  || (echo "\n--> Payment FAILED" && exit 1)
 
 # Invalid payload → expect HTTP 422
 check-invalid-payload:
 	@echo "Testing invalid payload (missing payer/payee)..."
-	@curl -s -o /dev/null -w "%{http_code}\n" -X POST http://localhost:$(PAYMENT_PORT)/pay \
+	@curl -i -s -X POST http://localhost:$(PAYMENT_PORT)/pay \
 	  -H "Content-Type: application/json" \
 	  -H "X-Service-Token: dev-shared-secret-change-me" \
-	  -d '{"amount":12345,"currency":"USD"}' | grep -q '^422$$' && echo "Invalid-payload check OK (422)" || (echo "Invalid-payload check FAILED" && exit 1)
+	  -d '{"amount":12345,"currency":"USD"}' | tee response_invalid.txt
+	@grep -q "422" response_invalid.txt && echo "\n--> Invalid-payload rejected correctly (HTTP 422)" || (echo "\n--> Invalid-payload check FAILED" && exit 1)
 
 # Processor auth failure (no Bearer token) → expect HTTP 401
 check-auth-failure:
 	@echo "Testing processor auth failure (no Bearer token)..."
-	@curl -s -o /dev/null -w "%{http_code}\n" -X POST http://localhost:$(PROCESSOR_PORT)/process \
+	@curl -i -s -X POST http://localhost:$(PROCESSOR_PORT)/process \
 	  -H "Content-Type: application/json" \
-	  -d '{"amount":12345,"currency":"USD","payer":"acc-1","payee":"acc-2","cardNumber":"4111111111111111","expiry":"12/25","cvv":"123","reference":"test-01"}' | grep -q '^401$$' && echo "Auth-failure check OK (401)" || (echo "Auth-failure check FAILED" && exit 1)
+	  -d '{"amount":12345,"currency":"USD","payer":"acc-1","payee":"acc-2","cardNumber":"4111111111111111","expiry":"12/25","cvv":"123","reference":"test-01"}' | tee response_auth.txt
+	@grep -q "401" response_auth.txt && echo "\n--> Auth check rejected correctly (HTTP 401 Unauthorized)" || (echo "\n--> Auth-failure check FAILED" && exit 1)
 
 # ------------------------------------------------------------
 # 4️⃣ Miscellaneous helpers
