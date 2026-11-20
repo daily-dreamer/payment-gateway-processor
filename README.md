@@ -196,5 +196,3 @@ Testing processor auth failure (no Bearer token)...
 Auth-failure check OK (401)
 All mandatory checks passed.
 ```
-
-![Make Check All](screenshots/make-check-all.png)
